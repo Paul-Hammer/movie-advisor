@@ -1,17 +1,5 @@
 import Random from '@/components/Random';
-import Trending from '@/components/Trending';
 
-const Container = () => (
-  <div className='flex flex-1 flex-col'>
-    <div className='xs:mb-4'>
-      <Random />
-      <div className='h-2 w-full' />
-    </div>
-    <div className='hidden w-full rounded-lg xs:block'>
-      <Trending />
-      <div className='h-2 w-full' />
-    </div>
-  </div>
-);
+const Container = () => <Random />;
 
 export default Container;
