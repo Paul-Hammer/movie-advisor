@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import Color, { useColor, usePalette } from 'color-thief-react';
 
 import Actions from './components/Actions';
+import useDetails from './useDetails';
 
 interface Props {
   show?: Show;
@@ -20,7 +21,11 @@ interface Props {
   card?: ReactNode;
 }
 
-const Preview: FC<Props> = ({ show, className, onClose, children, card }) => {
+const Preview: FC<Props> = ({ show: initialShow, className, onClose, children, card }) => {
+  const { data: detailedShow } = useDetails({ showId: initialShow?.id, showType: initialShow?.type });
+
+  const show = detailedShow || initialShow;
+
   if (!show) return null;
 
   return (
@@ -34,8 +39,13 @@ const Preview: FC<Props> = ({ show, className, onClose, children, card }) => {
       <div className='flex flex-col md:flex-row z-20 bg-background rounded-xl overflow-hidden'>
         {card || <Card className='mx-auto' show={show} />}
         <div className='flex grow flex-col p-5 bg-background'>
-          <p className='uppercase mb-4 text-2xl'>{show.title}</p>
-          <p key={show.id} className='mb-3 leading-7'>
+          <p className='uppercase mb-3 text-2xl'>{show.title}</p>
+          <p className='flex gap-5 mb-3'>
+            <span>{new Date(show.release).getFullYear()}</span>
+            <span>{show.runtime} min</span>
+            <span>{show.genres?.map(({ name }) => name).join(', ')}</span>
+          </p>
+          <p key={show.id} className='mb-3'>
             {show.overview}
           </p>
         </div>

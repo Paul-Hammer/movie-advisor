@@ -2,7 +2,7 @@
 
 import { createUniqueRandomGenerator } from '../lib/utils';
 
-import mapMoviesSeriesResponseToShows from './dto/Show';
+import mapMoviesSeriesResponseToShows, { mapMovieSeriesToShow } from './dto/Show';
 import pirateBay from './parsers/pirate-bay';
 import yts from './parsers/yts';
 import http from './Http';
@@ -30,6 +30,18 @@ export const search = async ({
 const TOTAL_PAGES = 500;
 
 const generatePage = createUniqueRandomGenerator(TOTAL_PAGES);
+
+export const details = async ({
+  showId,
+  showType = 'movie'
+}: {
+  showId: Show['id'];
+  showType: Show['type'];
+}): Promise<Show & Details> => {
+  return http
+    .get<(Movie | Series) & Details>(`/${showType}/${showId}`)
+    .then((response) => ({ ...mapMovieSeriesToShow(response, showType), ...response }));
+};
 
 export const randomMovies = async (): Promise<Pagination<Show>> => {
   return http
@@ -147,16 +159,17 @@ export const credits = async ({
   showType?: Show['type'];
 }): Promise<Array<Actor>> => {
   return http
-    .get<{ cast: Array<unknown> }>(`/${showType}/${showId}/${showType === 'tv' ? 'aggregate_credits' : 'credits'}`)
-    .then((data) => {
-      if (showType === 'tv') {
-        return data.cast.map((item) => {
-          const actor = item as AggregatedActor;
-          const [role] = actor.roles || [{}];
-          return { ...actor, ...role } as unknown as Actor;
-        });
-      }
-      return data.cast as Array<Actor>;
+    .get<{ cast: Array<Actor | AggregatedActor> }>(
+      `/${showType}/${showId}/${showType === 'tv' ? 'aggregate_credits' : 'credits'}`
+    )
+    .then(({ cast }) => {
+      return cast.map((actor) => {
+        if ('character' in actor) return actor;
+
+        const [{ character }] = actor.roles || [{}];
+
+        return { ...actor, character };
+      });
     });
 };
 
@@ -174,22 +187,6 @@ export const trailers = async ({
       }
     })
     .then((data) => data.results);
-};
-
-export const torrentFiles = (magnet: string): Promise<Video[]> => {
-  return http
-    .get<{ name: string; subtitles: Subtitles[] }[]>('/files', { params: { magnet } }, process.env.TRACKER_PROXY_BASE)
-    .then((files) =>
-      files.map((file) => {
-        const base = `${process.env.TRACKER_PROXY_BASE}/stream?magnet=${encodeURIComponent(magnet)}}`;
-
-        return {
-          name: file.name,
-          src: `${base}&filename=${encodeURIComponent(file.name)}`,
-          subtitles: file.subtitles
-        };
-      })
-    );
 };
 
 export const YTSTorrents = async ({
