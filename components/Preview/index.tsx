@@ -21,10 +21,10 @@ interface Props {
   card?: ReactNode;
 }
 
-const Preview: FC<Props> = ({ show: initialShow, className, onClose, children, card }) => {
-  const { data: detailedShow } = useDetails({ showId: initialShow?.id, showType: initialShow?.type });
+const Preview: FC<Props> = ({ show: baseShow, className, onClose, children, card }) => {
+  const { data: detailedShow } = useDetails({ showId: baseShow?.id, showType: baseShow?.type });
 
-  const show = detailedShow || initialShow;
+  const show: (Show & Partial<Details>) | undefined = detailedShow || baseShow;
 
   if (!show) return null;
 
@@ -36,18 +36,26 @@ const Preview: FC<Props> = ({ show: initialShow, className, onClose, children, c
           backgroundSize: '300%'
         }}
       />
-      <div className='flex flex-col md:flex-row z-20 bg-background rounded-xl overflow-hidden'>
+      <div className='flex flex-col md:flex-row z-20 bg-black rounded-xl overflow-hidden'>
         {card || <Card className='mx-auto' show={show} />}
         <div className='flex grow flex-col p-5 bg-background'>
           <p className='uppercase mb-3 text-2xl'>{show.title}</p>
           <p className='flex gap-5 mb-3'>
             <span>{new Date(show.release).getFullYear()}</span>
-            <span>{show.runtime} min</span>
-            <span>{show.genres?.map(({ name }) => name).join(', ')}</span>
+            <span>{show.runtime || '∞'} min</span>
+            <span>
+              {show.genres
+                ?.map(({ name }) => name)
+                .slice(0, 3)
+                .join(', ')}
+            </span>
           </p>
           <p key={show.id} className='mb-3'>
             {show.overview}
           </p>
+          <div className='mt-auto grid'>
+            <Credits showId={show.id} showType={show.type} />
+          </div>
         </div>
       </div>
     </div>
